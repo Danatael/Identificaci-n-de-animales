@@ -1,0 +1,22 @@
+<!-- index.html para la vista principal -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Identificación de Animales</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Identifica animales con la cámara de tu celular</h1>
+    <form method="POST" enctype="multipart/form-data" action="/identificar">
+        <label for="foto">Selecciona o toma una foto:</label>
+        <input type="file" accept="image/*" name="foto" id="foto" title="Foto del animal" placeholder="Foto del animal">
+        <button type="submit">Identificar</button>
+    </form>
+    <div id="resultado">
+        {% if resultado %}
+            <p>{{ resultado }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
