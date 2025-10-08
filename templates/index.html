@@ -8,11 +8,45 @@
 </head>
 <body>
     <h1>Identifica animales con la cámara de tu celular</h1>
-    <form method="POST" enctype="multipart/form-data" action="/identificar">
-        <label for="foto">Selecciona o toma una foto:</label>
-        <input type="file" accept="image/*" name="foto" id="foto" title="Foto del animal" placeholder="Foto del animal">
-        <button type="submit">Identificar</button>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <video id="video" autoplay playsinline style="width: 90vw; max-width: 400px; background: #ccc; border-radius: 16px; margin-bottom: 10px;"></video>
+        <div id="mensajeCamara" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">No se pudo activar la cámara. Verifica los permisos o prueba otro navegador.</div>
+        <button id="capturar" style="width: 60px; height: 60px; border-radius: 50%; background: #eee; border: none; margin-bottom: 10px; font-size: 32px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 32px;">📷</span>
+        </button>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+    <form id="formFoto" method="POST" enctype="multipart/form-data" action="/identificar">
+        <input type="hidden" name="foto" id="fotoInput">
     </form>
+    <script>
+    // Acceder a la cámara trasera y pedir permisos
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const capturarBtn = document.getElementById('capturar');
+    const fotoInput = document.getElementById('fotoInput');
+    const formFoto = document.getElementById('formFoto');
+    function iniciarCamara() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(function(stream) {
+                video.srcObject = stream;
+            })
+            .catch(function(err) {
+                document.getElementById('mensajeCamara').style.display = 'block';
+            });
+    }
+    document.addEventListener('DOMContentLoaded', iniciarCamara);
+    capturarBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Convertir la imagen a base64
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        fotoInput.value = dataUrl;
+        formFoto.submit();
+    });
+    </script>
     <div id="resultado">
         {% if resultado %}
             <p>{{ resultado }}</p>
