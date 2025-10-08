@@ -5,18 +5,153 @@
     <meta charset="UTF-8">
     <title>Identificación de Animales</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: system-ui, Arial, sans-serif; padding: 1rem; }
+        #camera-section { display:flex; flex-direction:column; gap:0.5rem; max-width:420px; }
+        video { width:100%; max-height:60vh; background:#000; }
+        button { padding:0.6rem 1rem; font-size:1rem; }
+        #resultado { margin-top:1rem; }
+    </style>
 </head>
 <body>
-    <h1>Identifica animales con la cámara de tu celular</h1>
-    <form method="POST" enctype="multipart/form-data" action="/identificar">
-        <label for="foto">Selecciona o toma una foto:</label>
-        <input type="file" accept="image/*" name="foto" id="foto" title="Foto del animal" placeholder="Foto del animal">
-        <button type="submit">Identificar</button>
-    </form>
+    <h1>Identifica animales con la cámara de tu dispositivo</h1>
+
+    <div id="camera-section">
+        <div id="unsupported" style="display:none;">
+            <p>Tu navegador no soporta acceso a la cámara. Usa el selector de archivos.</p>
+        </div>
+
+        <!-- Video en vivo de la cámara -->
+        <video id="video" autoplay playsinline></video>
+
+        <!-- Botones -->
+        <div>
+            <button id="open-camera" type="button">Abrir cámara</button>
+            <button id="take-photo" type="button" disabled>Tomar foto</button>
+            <button id="stop-camera" type="button" disabled>Detener cámara</button>
+        </div>
+
+        <!-- Canvas para capturar la imagen (oculto) -->
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <!-- Fallback: formulario con input file -->
+        <form id="file-form" method="POST" enctype="multipart/form-data" action="/identificar" style="margin-top:0.5rem;">
+            <label for="foto">O selecciona una foto:</label>
+            <input type="file" accept="image/*" name="foto" id="foto" title="Foto del animal" placeholder="Foto del animal">
+            <button type="submit">Identificar</button>
+        </form>
+    </div>
+
     <div id="resultado">
         {% if resultado %}
             <p>{{ resultado }}</p>
         {% endif %}
     </div>
+
+    <script>
+    (function(){
+        const openBtn = document.getElementById('open-camera');
+        const takeBtn = document.getElementById('take-photo');
+        const stopBtn = document.getElementById('stop-camera');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const unsupported = document.getElementById('unsupported');
+        const fileForm = document.getElementById('file-form');
+
+        let stream = null;
+
+        // Detectar compatibilidad con getUserMedia incluyendo prefijos antiguos
+        function hasGetUserMedia() {
+            return !!(
+                (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ||
+                navigator.getUserMedia ||
+                navigator.webkitGetUserMedia ||
+                navigator.mozGetUserMedia
+            );
+        }
+
+        // Wrapper promisificado para diferentes implementaciones
+        function getUserMedia(constraints) {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                return navigator.mediaDevices.getUserMedia(constraints);
+            }
+            const legacy = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            if (!legacy) return Promise.reject(new Error('getUserMedia no soportado'));
+            return new Promise(function(resolve, reject){
+                legacy.call(navigator, constraints, resolve, reject);
+            });
+        }
+
+        if (!hasGetUserMedia()) {
+            unsupported.style.display = 'block';
+            video.style.display = 'none';
+            // keep openBtn enabled to allow fallback to file input
+            openBtn.disabled = false;
+            takeBtn.disabled = true;
+            stopBtn.disabled = true;
+        }
+
+        openBtn.addEventListener('click', async () => {
+            try {
+                stream = await getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                // Algunos navegadores antiguos no soportan srcObject
+                if ('srcObject' in video) {
+                    video.srcObject = stream;
+                } else {
+                    video.src = window.URL.createObjectURL(stream);
+                }
+                takeBtn.disabled = false;
+                stopBtn.disabled = false;
+            } catch (err) {
+                console.error('No se pudo acceder a la cámara:', err);
+                alert('No se pudo acceder a la cámara. Usa el selector de archivos como alternativa.');
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+                video.srcObject = null;
+                takeBtn.disabled = true;
+                stopBtn.disabled = true;
+            }
+        });
+
+        takeBtn.addEventListener('click', async () => {
+            if (!stream) return;
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, w, h);
+
+            // Convertir a blob y enviar via fetch como multipart/form-data
+            canvas.toBlob(async function(blob){
+                if (!blob) { alert('No se pudo capturar la imagen'); return; }
+
+                const form = new FormData();
+                // Nombre de campo 'foto' para que Flask lo reciba en request.files
+                form.append('foto', blob, 'captura.jpg');
+
+                try {
+                    const resp = await fetch('/identificar', { method: 'POST', body: form });
+                    const text = await resp.text();
+                    // Reemplazar el documento por la respuesta HTML del servidor
+                    document.open();
+                    document.write(text);
+                    document.close();
+                } catch (err) {
+                    console.error('Error enviando la imagen:', err);
+                    alert('Error al enviar la imagen');
+                }
+            }, 'image/jpeg', 0.92);
+        });
+
+        // Nota: getUserMedia requiere HTTPS (o localhost). Si pruebas desde otro dispositivo
+        // usando la IP de tu máquina, algunos navegadores pueden bloquear la cámara por no ser seguro.
+    })();
+    </script>
 </body>
 </html>
