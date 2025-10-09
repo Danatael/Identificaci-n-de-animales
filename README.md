@@ -1,3 +1,4 @@
+
 ## Web app para detectar animales
 
 El comando flask run --cert=adhoc inicia Flask con HTTPS usando un certificado generado automáticamente (adhoc). 
@@ -15,3 +16,4 @@ Esto inicia el servidor Flask en HTTPS, accesible desde otros dispositivos en la
 # Luego, accede desde tu celular a:
 
 Ejemplo: https://192.168.137.62:5000
+
