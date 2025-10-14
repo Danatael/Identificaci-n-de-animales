@@ -17,3 +17,11 @@ Esto inicia el servidor Flask en HTTPS, accesible desde otros dispositivos en la
 
 Ejemplo: https://192.168.137.62:5000
 
+# Instalacion de librerias: 
+
+pip install tensorflow
+
+pip install flask 
+
+pip install crytography
+
