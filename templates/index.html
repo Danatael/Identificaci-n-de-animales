@@ -246,6 +246,48 @@
             display: none;
         }
 
+        /* Ajuste para la escena AR */
+        .ar-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 40px auto 30px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.2);
+            border: 2px solid #e9ecef;
+            background: #fff;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        a-scene[embedded] {
+            width: 100% !important;
+            height: 300px !important;
+            min-height: unset !important;
+            max-width: 100% !important;
+            border-radius: 20px;
+            background: #fff;
+        }
+
+        body > video, body > canvas, body > #arjs-video {
+            display: none !important;
+        }
+        .a-scene video, .a-scene canvas, .a-scene #arjs-video {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 20px;
+        }
+
+        .a-entity[text] {
+            text-align: center !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 15px;
@@ -270,8 +312,22 @@
             }
         }
     </style>
+    <!-- AR.js y A-Frame -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 <body>
+    <!-- Escena de Realidad Aumentada en recuadro -->
+    <div class="ar-container">
+        <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+            <a-marker preset="hiro">
+                <a-box position="0 0.5 0" material="color: orange;"></a-box>
+                <a-entity id="ar-label" position="0 1 0" text="value: Animal detectado; color: #222; width: 4; align: center;"></a-entity>
+            </a-marker>
+            <a-entity camera></a-entity>
+        </a-scene>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-paw"></i> IA Animal</h1>
@@ -569,6 +625,16 @@
                 document.getElementById('file-form').submit();
             }
         }
+
+        // Mostrar resultado en la etiqueta AR si existe
+        {% if resultado %}
+        document.addEventListener('DOMContentLoaded', function() {
+            var arLabel = document.getElementById('ar-label');
+            if (arLabel) {
+                arLabel.setAttribute('text', 'value', `{{ resultado|striptags|replace("'", " ")|replace("\"", " ")|replace("<br>", " ") }}`);
+            }
+        });
+        {% endif %}
     </script>
 
     {% if resultado %}
