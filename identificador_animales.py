@@ -38,7 +38,7 @@ def identificar_animal(imagen_file):
         if not filtrados:
             # Si no se detecta ninguno de los animales, mostrar el resultado más probable
             nombre, prob = resultados[0][1], resultados[0][2]
-            return [(f"No es un animal objetivo. Predicción: {nombre}", prob*100)]
+            return [(f"Predicción: {nombre}", prob*100)]
         return filtrados
     except Exception as e:
         return [("Error al procesar la imagen", 0)]
