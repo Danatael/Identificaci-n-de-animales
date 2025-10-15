@@ -568,7 +568,7 @@
                 <div class="result-card" style="margin-top:1rem;">
                     <div class="alert alert-info">
                         <i class="fas fa-paw"></i>
-                        <strong>Resultado:</strong> {{ resultado }}
+                        Resultado: {{ resultado|safe }}
                     </div>
                     <div class="result-actions">
                         <a href="/" class="btn btn-primary">
@@ -852,7 +852,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             var arLabel = document.getElementById('ar-label');
             if (arLabel) {
-                arLabel.setAttribute('text', 'value', `{{ resultado|striptags|replace("'", " ")|replace("\"", " ")|replace("<br>", " ") }}`);
+                // Elimina etiquetas <b>, <br> y otros tags, y separa por salto de línea si hay <br>
+                arLabel.setAttribute('text', 'value', `{{ resultado|striptags|replace('<br>', '\n')|replace('<b>', '')|replace('</b>', '')|replace("'", " ")|replace('"', ' ') }}`);
             }
         });
         {% endif %}

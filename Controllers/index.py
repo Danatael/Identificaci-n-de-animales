@@ -68,11 +68,11 @@ def identificar():
             info = info_animales.get(animal, None)
             if info:
                 etiquetas.append(
-                    f"<b>{info['icono']} {info['nombre']}</b> ({prob:.2f}%)<br>"
-                    f"<b>Nombre científico:</b> {info['cientifico']}<br>"
-                    f"<b>Hábitat:</b> {info['habitat']}<br>"
-                    f"<b>Alimentación:</b> {info['alimentacion']}<br>"
-                    f"<b>Descripción:</b> {info['descripcion']}"
+                    f"{info['icono']} {info['nombre']}<br>"
+                    f"Nombre científico: {info['cientifico']}<br>"
+                    f"Hábitat: {info['habitat']}<br>"
+                    f"Alimentación: {info['alimentacion']}<br>"
+                    f"Descripción: {info['descripcion']}"
                 )
             else:
                 etiquetas.append(f"{animal} ({prob:.2f}%)")
