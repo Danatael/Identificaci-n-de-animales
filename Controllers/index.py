@@ -61,10 +61,53 @@ def identificar():
             'icono': '🦎'
         }
     }
+    ar_models = {
+        'Perro': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-dog/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Gato': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-cat/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Ave': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-bird/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Serpiente': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-snake/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Zorrillo': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-skunk/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Iguana': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-iguana/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        }
+    }
     if foto:
         resultados = identificar_animal(foto)
         etiquetas = []
         for animal, prob in resultados:
+            if animal == 'Perro':
+                info = info_animales.get('Perro', None)
+                if info:
+                    etiquetas.append(
+                        f"{info['icono']} {info['nombre']}<br>"
+                        f"Nombre científico: {info['cientifico']}<br>"
+                        f"Hábitat: {info['habitat']}<br>"
+                        f"Alimentación: {info['alimentacion']}<br>"
+                        f"Descripción: {info['descripcion']}"
+                    )
+                continue
             info = info_animales.get(animal, None)
             if info:
                 etiquetas.append(
@@ -80,3 +123,42 @@ def identificar():
     else:
         resultado = "No se recibió imagen"
     return render_template('index.html', resultado=resultado)
+
+@main_controller.route('/realidad-aumentada/<animal>', methods=['GET'])
+def realidad_aumentada(animal):
+    ar_models = {
+        'Perro': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-dog/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Gato': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-cat/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Ave': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-bird/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Serpiente': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-snake/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Zorrillo': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-skunk/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        },
+        'Iguana': {
+            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-iguana/scene.gltf',
+            'scale': '1 1 1',
+            'rotation': '0 180 0'
+        }
+    }
+    ar_model = ar_models.get(animal.capitalize(), None)
+    if not ar_model:
+        return "Modelo AR no encontrado", 404
+    return render_template('realidad_aumentada.html', ar_model=ar_model)
