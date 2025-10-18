@@ -1,0 +1,228 @@
+/* Lista de modelos AR responsiva */
+.model-list {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    max-width: 280px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.model-list h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.model-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.model-list li {
+    margin: 0;
+}
+
+.model-list button {
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.model-list button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.model-list button:active {
+    transform: translateY(0);
+}
+
+/* Responsive design para móviles */
+@media (max-width: 768px) {
+    .model-list {
+        top: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        max-width: none;
+        width: calc(100% - 1rem);
+        padding: 0.75rem;
+    }
+    
+    .model-list h2 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .model-list ul {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .model-list button {
+        padding: 0.6rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .model-list ul {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .model-list button {
+        padding: 0.7rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* AR Container responsivo */
+.ar-container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+a-scene[embedded] {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Estilo para el contenedor dinámico de modelos */
+#model-container {
+    display: none;
+}
+
+/* Estilo para el menú hamburguesa */
+.menu-toggle {
+    background: rgba(255,255,255,0.9) !important;
+    color: #667eea !important;
+    border: none;
+    border-radius: 50% !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.2rem;
+    cursor: pointer;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+    transition: all 0.3s ease !important;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.menu-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.3) !important;
+}
+
+.menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95) !important;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    overflow-y: auto;
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+}
+
+.menu h2 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.menu ul li {
+    margin: 0;
+}
+
+.menu button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.menu button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.back-btn {
+    background: linear-gradient(45deg, #f093fb, #f5576c) !important;
+    margin-top: 1rem;
+    font-weight: 600 !important;
+}
+
+.back-btn:hover {
+    box-shadow: 0 8px 25px rgba(245, 87, 108, 0.4) !important;
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .model-list button {
+        transition: none;
+    }
+    
+    .model-list button:hover {
+        transform: none;
+    }
+}
