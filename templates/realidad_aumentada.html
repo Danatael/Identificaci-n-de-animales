@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Realidad Aumentada - Animales 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .main-layout {
+            background: transparent;
+        }
+        
+        .ar-title {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .ar-subtitle {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 0.9rem;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        #model-container {
+            margin: 2rem;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        #model-container iframe {
+            border-radius: 15px;
+        }
+        
+        .menu-toggle {
+            background: rgba(255,255,255,0.9) !important;
+            color: #667eea !important;
+            border-radius: 50% !important;
+            width: 50px !important;
+            height: 50px !important;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3) !important;
+        }
+        
+        .menu {
+            background: rgba(255,255,255,0.95) !important;
+            backdrop-filter: blur(20px) !important;
+        }
+        
+        .menu h2 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="ar-title">
+            <i class="fas fa-cube"></i> Modelos 3D
+        </div>
+        
+        <header class="header">
+            <button class="menu-toggle" onclick="toggleMenu()" title="Abrir menú de animales">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav id="menu" class="menu">
+                <h2><i class="fas fa-paw"></i> Selecciona un Animal</h2>
+                <ul>
+                    <li><button onclick="showModel('dog')"><i class="fas fa-dog"></i> 🐶 Perro</button></li>
+                    <li><button onclick="showModel('cat')"><i class="fas fa-cat"></i> 🐱 Gato</button></li>
+                    <li><button onclick="showModel('bird')"><i class="fas fa-dove"></i> 🐦 Ave</button></li>
+                    <li><button onclick="showModel('snake')"><i class="fas fa-snake"></i> 🐍 Serpiente</button></li>
+                    <li><button onclick="showModel('skunk')">🦨 Zorrillo</button></li>
+                    <li><button onclick="showModel('iguana')">🦎 Iguana</button></li>
+                    <li><button onclick="showModel('cow')"><i class="fas fa-cow"></i> 🐄 Vaca</button></li>
+                    <li><button onclick="showModel('sheep')">🐑 Oveja</button></li>
+                    <li><button onclick="showModel('goat')">🐐 Chivo</button></li>
+                    <li><button onclick="showModel('pig')">🐖 Cerdo</button></li>
+                </ul>
+                <button class="back-btn" onclick="goToIndex()">
+                    <i class="fas fa-arrow-left"></i> Regresar a Inicio
+                </button>
+            </nav>
+        </header>
+
+        <!-- Contenedor dinámico para mostrar el modelo seleccionado -->
+        <div id="model-container" class="sketchfab-embed-wrapper"></div>
+        
+        <div class="ar-subtitle">
+            <i class="fas fa-hand-pointer"></i> Toca el menú para seleccionar un animal y ver su modelo 3D
+        </div>
+
+        <script>
+            function toggleMenu() {
+                const menu = document.getElementById('menu');
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+
+            function showModel(modelId) {
+                const models = {
+                    dog: 'https://sketchfab.com/models/3a55ce3d8b614a1082d787e110551de3/embed',
+                    cat: 'https://sketchfab.com/models/991fb5c847cd42338c0b445605e2404b/embed',
+                    bird: 'https://sketchfab.com/models/0d31748606c2499fb652c0c1052b7cfa/embed',
+                    snake: 'https://sketchfab.com/models/70b3df63040848fd9efd8dae6e098182/embed',
+                    skunk: 'https://sketchfab.com/models/c06f79723e54473e94d8da99fa84e9b1/embed',
+                    iguana: 'https://sketchfab.com/models/1f273a119ad44e9087e5545761fc57ca/embed',
+                    cow: 'https://sketchfab.com/models/4fe2c9d43532498081a30f1794758954/embed',
+                    sheep: 'https://sketchfab.com/models/ae26a2ee035b4fb1bdfa751e6272acb3/embed',
+                    goat: 'https://sketchfab.com/models/8852133c070f4b3b8f243fbf6075bf7f/embed',
+                    pig: 'https://sketchfab.com/models/365c36eade8c45df97372f5036660880/embed'
+                };
+
+                const container = document.getElementById('model-container');
+                container.style.display = 'block';
+                container.innerHTML = `<iframe src="${models[modelId]}" title="${modelId}" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" style="width: 100%; height: 500px;"></iframe>`;
+
+                // Minimizar el menú hamburguesa
+                const menu = document.getElementById('menu');
+                menu.style.display = 'none';
+            }
+
+            function goToIndex() {
+                window.location.href = '/';
+            }
+        </script>
+    </div>
+</body>
+</html>

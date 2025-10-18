@@ -1,79 +1,611 @@
-<!-- index.html para la vista principal -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Identificación de Animales</title>
+    <title>Identificación de Animales IA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: system-ui, Arial, sans-serif; padding: 1rem; }
-        #camera-section { display:flex; flex-direction:column; gap:0.5rem; max-width:420px; }
-        video { width:100%; max-height:60vh; background:#000; }
-        button { padding:0.6rem 1rem; font-size:1rem; }
-        #resultado { margin-top:1rem; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Layout principal responsivo */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 0 1rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: 300;
+        }
+
+        .camera-container {
+            background: white;
+            border-radius: 1.25rem;
+            padding: clamp(1rem, 4vw, 2rem);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            width: 100%;
+        }
+
+        .video-wrapper {
+            position: relative;
+            margin-bottom: 1.5rem;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #f8f9fa;
+            border: 3px solid #e9ecef;
+            aspect-ratio: 4/3;
+            width: 100%;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #6c757d;
+            text-align: center;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            padding: 1rem;
+        }
+
+        .video-placeholder i {
+            font-size: clamp(2rem, 8vw, 3rem);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 1.5rem;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: white;
+            min-height: 48px; /* Área táctil mínima para móviles */
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .btn-capture {
+            width: clamp(60px, 15vw, 70px);
+            height: clamp(60px, 15vw, 70px);
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: 4px solid white;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-capture:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.25rem;
+            font-weight: 500;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+        }
+
+        .alert-error {
+            background: #fee;
+            color: #c53030;
+            border: 1px solid #fed7d7;
+        }
+
+        .alert-info {
+            background: #e6fffa;
+            color: #319795;
+            border: 1px solid #b2f5ea;
+        }
+
+        .file-upload {
+            margin-top: 1.25rem;
+            padding: clamp(1rem, 4vw, 1.5rem);
+            border: 2px dashed #cbd5e0;
+            border-radius: 0.75rem;
+            text-align: center;
+            background: #f7fafc;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload label {
+            cursor: pointer;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+        }
+
+        .file-upload label i {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            margin-bottom: 0.5rem;
+            display: block;
+            color: #667eea;
+        }
+
+        .file-upload small {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            color: #718096;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1.25rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: rgba(255,255,255,0.8);
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            padding: 0 1rem;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        /* AR Container responsivo */
+        .ar-container {
+            width: 100%;
+            max-width: 500px;
+            margin: clamp(1rem, 4vw, 2.5rem) auto 1.5rem auto;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.2);
+            border: 2px solid #e9ecef;
+            background: #fff;
+            aspect-ratio: 16/10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        a-scene[embedded] {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: unset !important;
+            max-width: 100% !important;
+            border-radius: 1.25rem;
+            background: #fff;
+        }
+
+        body > video, body > canvas, body > #arjs-video {
+            display: none !important;
+        }
+        
+        .a-scene video, .a-scene canvas, .a-scene #arjs-video {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 1.25rem;
+        }
+
+        .a-entity[text] {
+            text-align: center !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* Breakpoints responsivos */
+        
+        /* Móviles pequeños */
+        @media (max-width: 480px) {
+            .main-layout {
+                padding: 0.5rem;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .camera-container {
+                border-radius: 1rem;
+            }
+
+            .video-wrapper {
+                border-radius: 0.75rem;
+                border-width: 2px;
+            }
+        }
+
+        /* Tablets */
+        @media (min-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr 1fr;
+                align-items: start;
+                gap: 2rem;
+                padding: 2rem;
+            }
+
+            .ar-container {
+                grid-column: 1;
+                margin: 0;
+                height: 400px;
+            }
+
+            .container {
+                grid-column: 2;
+                max-width: none;
+            }
+
+            .controls {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .btn {
+                font-size: 1rem;
+            }
+        }
+
+        /* Pantallas grandes */
+        @media (min-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr 1.2fr;
+                gap: 3rem;
+                padding: 3rem;
+            }
+
+            .ar-container {
+                height: 450px;
+                position: sticky;
+                top: 2rem;
+            }
+
+            .camera-container {
+                padding: 2.5rem;
+            }
+
+            .controls {
+                gap: 1.5rem;
+            }
+        }
+
+        /* Pantallas muy grandes */
+        @media (min-width: 1400px) {
+            .main-layout {
+                grid-template-columns: 1fr 1fr;
+                max-width: 1200px;
+            }
+        }
+
+        /* Orientación landscape en móviles */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .main-layout {
+                grid-template-columns: 1fr 1fr;
+                align-items: center;
+                padding: 1rem;
+            }
+
+            .ar-container {
+                grid-column: 1;
+                margin: 0;
+                height: 250px;
+            }
+
+            .container {
+                grid-column: 2;
+            }
+
+            .header {
+                margin-bottom: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .video-wrapper {
+                aspect-ratio: 3/2;
+            }
+        }
+
+        /* Mejoras de accesibilidad */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .spinner {
+                animation: none;
+                border: 3px solid #667eea;
+            }
+        }
+
+        /* Modo oscuro */
+        @media (prefers-color-scheme: dark) {
+            .camera-container {
+                background: rgba(255, 255, 255, 0.95);
+            }
+
+            .file-upload {
+                background: #f1f5f9;
+                border-color: #cbd5e0;
+            }
+
+            .file-upload:hover {
+                background: #e2e8f0;
+            }
+        }
+
+        /* Soporte para notch en dispositivos móviles */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .main-layout {
+                padding-top: max(1rem, env(safe-area-inset-top));
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Clases de utilidad */
+        .hidden {
+            display: none !important;
+        }
+
+        .results-container {
+            margin-top: 1.5rem;
+        }
+
+        .results-container .camera-container {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .result-actions {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        /* Mejoras de webkit para mejor compatibilidad */
+        .camera-container {
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
     </style>
+    <!-- AR.js y A-Frame -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
 </head>
 <body>
-    <h1>Identifica animales con la cámara de tu celular</h1>
-    <div style="display: flex; flex-direction: column; align-items: center;">
-        <video id="video" autoplay playsinline style="width: 90vw; max-width: 400px; background: #ccc; border-radius: 16px; margin-bottom: 10px;"></video>
-        <div id="mensajeCamara" style="color: red; font-weight: bold; margin-bottom: 10px; display: none;">No se pudo activar la cámara. Verifica los permisos o prueba otro navegador.</div>
-        <button id="capturar" style="width: 60px; height: 60px; border-radius: 50%; background: #eee; border: none; margin-bottom: 10px; font-size: 32px; display: flex; align-items: center; justify-content: center;">
-            <span style="font-size: 32px;">📷</span>
-        </button>
-        <canvas id="canvas" style="display:none;"></canvas>
-    </div>
-    <form id="formFoto" method="POST" enctype="multipart/form-data" action="/identificar">
-        <input type="hidden" name="foto" id="fotoInput">
-    </form>
-    <script>
-    // Acceder a la cámara trasera y pedir permisos
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const capturarBtn = document.getElementById('capturar');
-    const fotoInput = document.getElementById('fotoInput');
-    const formFoto = document.getElementById('formFoto');
-    function iniciarCamara() {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-            .then(function(stream) {
-                video.srcObject = stream;
-            })
-            .catch(function(err) {
-                document.getElementById('mensajeCamara').style.display = 'block';
-            });
-    }
-    document.addEventListener('DOMContentLoaded', iniciarCamara);
-    capturarBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        // Convertir la imagen a base64
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        fotoInput.value = dataUrl;
-        formFoto.submit();
-    });
-    </script>
+    <div class="main-layout">
 
-    <div id="resultado">
-        {% if resultado %}
-            <p>{{ resultado }}</p>
-        {% endif %}
-    </div>
+        <!-- Panel de control -->
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-paw"></i> IA Animal</h1>
+                <p>Identifica cualquier animal con inteligencia artificial</p>
+            </div>
 
+            <div class="camera-container">
+                <div class="video-wrapper">
+                    <video id="video" autoplay playsinline muted></video>
+                    <img id="captured-image" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:inherit;" alt="Foto capturada" />
+                    <div class="video-placeholder" id="placeholder">
+                        <i class="fas fa-camera"></i>
+                        <div>Presiona "Iniciar Cámara" para comenzar</div>
+                    </div>
+                </div>
+
+                <div id="mensajeCamara" class="alert alert-error hidden">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    No se pudo activar la cámara. Verifica los permisos o prueba otro navegador.
+                </div>
+
+                <div id="unsupported" class="alert alert-error hidden">
+                    <i class="fas fa-times-circle"></i>
+                    Tu navegador no soporta el acceso a la cámara. Usa el selector de archivos como alternativa.
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analizando imagen con IA...</p>
+                </div>
+
+                <div class="controls">
+                    <button id="open-camera" class="btn btn-primary">
+                        <i class="fas fa-video"></i>
+                        <span>Iniciar Cámara</span>
+                    </button>
+                    <button id="stop-camera" class="btn btn-secondary" disabled>
+                        <i class="fas fa-stop"></i>
+                        <span>Detener</span>
+                    </button>
+                </div>
+
+                <button id="take-photo" class="btn-capture" disabled title="Capturar foto">
+                    <i class="fas fa-camera" aria-label="Capturar foto"></i>
+                </button>
+
+                {% if resultado %}
+                <div class="result-card" style="margin-top:1rem;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-paw"></i>
+                        Resultado: {{ resultado|safe }}
+                    </div>
+                    <div class="result-actions">
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-camera"></i>
+                            <span>Identificar Otro Animal</span>
+                        </a>
+                        <a href="/realidad-aumentada/perro" class="btn btn-secondary">
+                            <i class="fas fa-camera"></i>
+                            <span>Realidad Aumentada</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <canvas id="canvas"></canvas>
+            </div>
+
+            <div class="footer">
+                <p><i class="fas fa-robot"></i> Potenciado por inteligencia artificial</p>
+            </div>
+        </div>
+    </div>
     <script>
-    (function(){
+        // Variables globales
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
         const openBtn = document.getElementById('open-camera');
         const takeBtn = document.getElementById('take-photo');
         const stopBtn = document.getElementById('stop-camera');
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
+        const placeholder = document.getElementById('placeholder');
+        const loading = document.getElementById('loading');
+        const mensajeCamara = document.getElementById('mensajeCamara');
         const unsupported = document.getElementById('unsupported');
-        const fileForm = document.getElementById('file-form');
 
         let stream = null;
 
-        // Detectar compatibilidad con getUserMedia incluyendo prefijos antiguos
+        // Detectar compatibilidad con getUserMedia
         function hasGetUserMedia() {
             return !!(
                 (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ||
@@ -83,7 +615,7 @@
             );
         }
 
-        // Wrapper promisificado para diferentes implementaciones
+        // Wrapper para diferentes implementaciones de getUserMedia
         function getUserMedia(constraints) {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 return navigator.mediaDevices.getUserMedia(constraints);
@@ -95,76 +627,241 @@
             });
         }
 
+        // Verificar compatibilidad al cargar
         if (!hasGetUserMedia()) {
-            unsupported.style.display = 'block';
-            video.style.display = 'none';
-            // keep openBtn enabled to allow fallback to file input
-            openBtn.disabled = false;
+            unsupported.classList.remove('hidden');
+            openBtn.disabled = true;
             takeBtn.disabled = true;
             stopBtn.disabled = true;
         }
 
+        // Mostrar loading
+        function showLoading() {
+            loading.style.display = 'block';
+            takeBtn.disabled = true;
+            stopBtn.disabled = true;
+        }
+
+        // Ocultar loading
+        function hideLoading() {
+            loading.style.display = 'none';
+            if (stream) {
+                takeBtn.disabled = false;
+                stopBtn.disabled = false;
+            }
+        }
+
+        // Iniciar cámara
         openBtn.addEventListener('click', async () => {
             try {
-                stream = await getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-                // Algunos navegadores antiguos no soportan srcObject
+                openBtn.disabled = true;
+                openBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Conectando...</span>';
+                
+                // Configuraciones de video optimizadas para dispositivos móviles
+                const constraints = {
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
+                    }, 
+                    audio: false 
+                };
+
+                // Fallback para dispositivos más antiguos
+                if (window.innerWidth < 768) {
+                    constraints.video.width = { ideal: 640, max: 1280 };
+                    constraints.video.height = { ideal: 480, max: 720 };
+                }
+
+                stream = await getUserMedia(constraints);
+
+                // Configurar video
                 if ('srcObject' in video) {
                     video.srcObject = stream;
                 } else {
                     video.src = window.URL.createObjectURL(stream);
                 }
-                takeBtn.disabled = false;
-                stopBtn.disabled = false;
+
+                video.onloadedmetadata = () => {
+                    placeholder.style.display = 'none';
+                    video.style.display = 'block';
+                    takeBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    openBtn.innerHTML = '<i class="fas fa-check"></i> <span>Cámara Activa</span>';
+                    mensajeCamara.classList.add('hidden');
+                };
+
             } catch (err) {
-                console.error('No se pudo acceder a la cámara:', err);
-                alert('No se pudo acceder a la cámara. Usa el selector de archivos como alternativa.');
+                console.error('Error al acceder a la cámara:', err);
+                mensajeCamara.classList.remove('hidden');
+                openBtn.disabled = false;
+                openBtn.innerHTML = '<i class="fas fa-video"></i> <span>Reintentar Cámara</span>';
             }
         });
 
+        // Detener cámara
         stopBtn.addEventListener('click', () => {
             if (stream) {
-                stream.getTracks().forEach(t => t.stop());
+                stream.getTracks().forEach(track => track.stop());
                 stream = null;
                 video.srcObject = null;
+                video.style.display = 'block';
+                placeholder.style.display = 'block';
                 takeBtn.disabled = true;
                 stopBtn.disabled = true;
+                openBtn.disabled = false;
+                openBtn.innerHTML = '<i class="fas fa-video"></i> <span>Iniciar Cámara</span>';
             }
         });
 
+        // Capturar foto
         takeBtn.addEventListener('click', async () => {
             if (!stream) return;
-            const w = video.videoWidth;
-            const h = video.videoHeight;
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, w, h);
+            showLoading();
+            try {
+                // Capturar imagen del video
+                const w = video.videoWidth;
+                const h = video.videoHeight;
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, w, h);
 
-            // Convertir a blob y enviar via fetch como multipart/form-data
-            canvas.toBlob(async function(blob){
-                if (!blob) { alert('No se pudo capturar la imagen'); return; }
+                // Mostrar imagen capturada y ocultar video
+                const img = document.getElementById('captured-image');
+                img.src = canvas.toDataURL('image/jpeg', 0.85);
+                img.style.display = 'block';
+                video.style.display = 'none';
+                placeholder.style.display = 'none';
 
-                const form = new FormData();
-                // Nombre de campo 'foto' para que Flask lo reciba en request.files
-                form.append('foto', blob, 'captura.jpg');
-
-                try {
-                    const resp = await fetch('/identificar', { method: 'POST', body: form });
-                    const text = await resp.text();
-                    // Reemplazar el documento por la respuesta HTML del servidor
-                    document.open();
-                    document.write(text);
-                    document.close();
-                } catch (err) {
-                    console.error('Error enviando la imagen:', err);
-                    alert('Error al enviar la imagen');
-                }
-            }, 'image/jpeg', 0.92);
+                // Convertir a blob y enviar
+                canvas.toBlob(async function(blob) {
+                    if (!blob) {
+                        alert('Error al capturar la imagen');
+                        hideLoading();
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('foto', blob, 'captura.jpg');
+                    try {
+                        const response = await fetch('/identificar', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (response.ok) {
+                            const html = await response.text();
+                            document.open();
+                            document.write(html);
+                            document.close();
+                        } else {
+                            throw new Error('Error en el servidor');
+                        }
+                    } catch (err) {
+                        console.error('Error enviando la imagen:', err);
+                        alert('Error al procesar la imagen. Inténtalo de nuevo.');
+                        hideLoading();
+                    }
+                }, 'image/jpeg', 0.85);
+            } catch (err) {
+                console.error('Error al capturar:', err);
+                alert('Error al capturar la imagen');
+                hideLoading();
+            }
         });
 
-        // Nota: getUserMedia requiere HTTPS (o localhost). Si pruebas desde otro dispositivo
-        // usando la IP de tu máquina, algunos navegadores pueden bloquear la cámara por no ser seguro.
-    })();
+        // Auto-iniciar cámara en dispositivos móviles si es posible
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verificar si es dispositivo móvil
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Ajustar la interfaz para dispositivos táctiles
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+            }
+
+            // Manejar cambios de orientación
+            window.addEventListener('orientationchange', () => {
+                setTimeout(() => {
+                    // Ajustar el video si está activo
+                    if (stream && video.srcObject) {
+                        video.style.height = 'auto';
+                    }
+                }, 100);
+            });
+            
+            if (isMobile && hasGetUserMedia()) {
+                // Esperar un poco antes de auto-iniciar en móviles
+                setTimeout(() => {
+                    if (!stream) {
+                        openBtn.click();
+                    }
+                }, 1000);
+            }
+        });
+
+        // Manejar subida de archivos con feedback visual
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                showLoading();
+                // El formulario se enviará automáticamente
+            }
+        });
+
+        // Mejorar la experiencia de arrastrar y soltar
+        const fileUpload = document.querySelector('.file-upload');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUpload.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            fileUpload.style.borderColor = '#667eea';
+            fileUpload.style.backgroundColor = '#edf2f7';
+        }
+
+        function unhighlight(e) {
+            fileUpload.style.borderColor = '#cbd5e0';
+            fileUpload.style.backgroundColor = '#f7fafc';
+        }
+
+        fileUpload.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                showLoading();
+                document.getElementById('file-form').submit();
+            }
+        }
+
+        // Mostrar resultado en la etiqueta AR si existe
+        {% if resultado %}
+        document.addEventListener('DOMContentLoaded', function() {
+            var arLabel = document.getElementById('ar-label');
+            if (arLabel) {
+                // Elimina etiquetas <b>, <br> y otros tags, y separa por salto de línea si hay <br>
+                arLabel.setAttribute('text', 'value', `{{ resultado|striptags|replace('<br>', '\n')|replace('<b>', '')|replace('</b>', '')|replace("'", " ")|replace('"', ' ') }}`);
+            }
+        });
+        {% endif %}
     </script>
+
 </body>
 </html>
