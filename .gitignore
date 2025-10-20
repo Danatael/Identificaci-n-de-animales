@@ -1,0 +1,27 @@
+# Archivos y carpetas a ignorar por git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+.vscode/
+*.log
+*.bak
+*.swp
+.DS_Store
+templates/__pycache__/
+Models/__pycache__/
+Controllers/__pycache__/
+instance/
+*.idea/
+*.egg-info/
+*.cache/
+*.coverage
+*.mypy_cache/
+*.pytest_cache/
+*.ipynb_checkpoints/
+
+# Ignorar archivos de sistema
+Thumbs.db
