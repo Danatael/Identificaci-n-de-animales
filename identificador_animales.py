@@ -26,19 +26,24 @@ def identificar_animal(imagen_file):
             'ave': ['bird', 'parrot', 'finch', 'cockatoo', 'macaw', 'jay', 'magpie', 'chickadee', 'bulbul', 'warbler', 'sparrow', 'robin', 'oriole', 'canary', 'goldfinch', 'cardinal', 'bunting', 'nuthatch', 'woodpecker', 'kingfisher', 'hummingbird', 'ostrich', 'penguin', 'goose', 'duck', 'swan', 'crane', 'stork', 'heron', 'flamingo', 'cock', 'hen', 'chicken', 'turkey', 'peacock', 'quail', 'ptarmigan', 'grouse', 'partridge', 'pigeon', 'dove', 'cuckoo', 'owl', 'hawk', 'eagle', 'vulture', 'falcon'],
             'serpiente': ['snake', 'python', 'boa', 'viper', 'cobra', 'mamba', 'rattlesnake', 'asp'],
             'zorrillo': ['skunk'],
-            'iguana': ['iguana']
+            'iguana': ['iguana'],
+            'vaca': ['cow', 'ox', 'bull', 'calf', 'cattle', 'steer', 'heifer'],
+            'oveja': ['sheep', 'lamb', 'ram'],
+            'chivo': ['goat', 'kid', 'billy'],
+            'cerdo': ['pig', 'swine', 'hog', 'boar'],
+            
         }
 
         filtrados = []
         for (_, nombre, prob) in resultados:
             nombre_lower = nombre.lower()
             for animal, keywords in animales.items():
-                if any(k in nombre_lower for k in keywords):
-                    filtrados.append((animal.capitalize(), prob*100))
+                for k in keywords:
+                    if k.lower() in nombre_lower:
+                        filtrados.append((animal.capitalize(), prob*100))
+                        break
         if not filtrados:
-            # Si no se detecta ninguno de los animales, mostrar el resultado más probable
-            nombre, prob = resultados[0][1], resultados[0][2]
-            return [(f"Predicción: {nombre}", prob*100)]
+            return [('No se detectó ningún animal conocido', 0)]
         return filtrados
     except Exception as e:
         return [("Error al procesar la imagen", 0)]
