@@ -59,67 +59,55 @@ def identificar():
             'habitat': 'Selvas, zonas tropicales',
             'alimentacion': 'Herbívoro',
             'icono': '🦎'
-        }
-    }
-    ar_models = {
-        'Perro': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-dog/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
         },
-        'Gato': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-cat/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
+        'Vaca': {
+            'nombre': 'Vaca',
+            'descripcion': 'La vaca es un mamífero rumiante doméstico, criado principalmente para la producción de leche y carne.',
+            'cientifico': 'Bos taurus',
+            'habitat': 'Pastizales, granjas, zonas rurales',
+            'alimentacion': 'Herbívoro',
+            'icono': '🐄'
         },
-        'Ave': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-bird/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
+        'Oveja': {
+            'nombre': 'Oveja',
+            'descripcion': 'La oveja es un mamífero doméstico criado principalmente por su lana, carne y leche.',
+            'cientifico': 'Ovis aries',
+            'habitat': 'Pastizales, montañas, granjas',
+            'alimentacion': 'Herbívoro',
+            'icono': '🐑'
         },
-        'Serpiente': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-snake/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
+        'Chivo': {
+            'nombre': 'Cabra',
+            'descripcion': 'La cabra es un mamífero doméstico ágil y resistente, criado por su leche, carne y fibra.',
+            'cientifico': 'Capra hircus',
+            'habitat': 'Montañas, zonas áridas, granjas',
+            'alimentacion': 'Herbívoro',
+            'icono': '🐐'
         },
-        'Zorrillo': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-skunk/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
-        },
-        'Iguana': {
-            'src': 'https://cdn.jsdelivr.net/gh/aframe-models/animal-iguana/scene.gltf',
-            'scale': '1 1 1',
-            'rotation': '0 180 0'
+        'Cerdo': {
+            'nombre': 'Cerdo',
+            'descripcion': 'El cerdo es un mamífero doméstico inteligente, criado principalmente para la producción de carne.',
+            'cientifico': 'Sus scrofa domesticus',
+            'habitat': 'Granjas, corrales, zonas rurales',
+            'alimentacion': 'Omnívoro',
+            'icono': '🐖'
         }
     }
     if foto:
         resultados = identificar_animal(foto)
-        etiquetas = []
-        for animal, prob in resultados:
-            if animal == 'Perro':
-                info = info_animales.get('Perro', None)
-                if info:
-                    etiquetas.append(
-                        f"{info['icono']} {info['nombre']}<br>"
-                        f"Nombre científico: {info['cientifico']}<br>"
-                        f"Hábitat: {info['habitat']}<br>"
-                        f"Alimentación: {info['alimentacion']}<br>"
-                        f"Descripción: {info['descripcion']}"
-                    )
-                continue
-            info = info_animales.get(animal, None)
-            if info:
-                etiquetas.append(
-                    f"{info['icono']} {info['nombre']}<br>"
-                    f"Nombre científico: {info['cientifico']}<br>"
-                    f"Hábitat: {info['habitat']}<br>"
-                    f"Alimentación: {info['alimentacion']}<br>"
-                    f"Descripción: {info['descripcion']}"
-                )
-            else:
-                etiquetas.append(f"{animal} ({prob:.2f}%)")
-        resultado = '<br><br>'.join(etiquetas)
+        # Solo mostrar el animal con mayor probabilidad
+        animal, prob = max(resultados, key=lambda x: x[1])
+        info = info_animales.get(animal, None)
+        if info:
+            resultado = (
+                f"{info['icono']} {info['nombre']}<br>"
+                f"Nombre científico: {info['cientifico']}<br>"
+                f"Hábitat: {info['habitat']}<br>"
+                f"Alimentación: {info['alimentacion']}<br>"
+                f"Descripción: {info['descripcion']}"
+            )
+        else:
+            resultado = f"{animal} ({prob:.2f}%)"
     else:
         resultado = "No se recibió imagen"
     return render_template('index.html', resultado=resultado)
