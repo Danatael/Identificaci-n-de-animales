@@ -40,7 +40,8 @@
             width: 100vw;
             height: 100vh;
             z-index: 2;
-            pointer-events: none;
+            pointer-events: auto; /* Permitir interacciones táctiles */
+            touch-action: none; /* Prevenir comportamientos por defecto */
         }
         
         /* A-Frame scene completamente transparente */
@@ -52,6 +53,23 @@
         
         a-scene canvas {
             background: transparent !important;
+        }
+        
+        /* Indicador de selección */
+        .selection-indicator {
+            position: fixed;
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.8;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
         }
         
         .ar-title { 
@@ -114,12 +132,13 @@
         /* Control de posición del modelo */
         .model-controls {
             position: fixed;
-            bottom: 6rem;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
             z-index: 1000;
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            gap: 0.75rem;
             pointer-events: auto;
         }
         
@@ -163,7 +182,8 @@
             }
             
             .model-controls {
-                bottom: 4rem;
+                right: 0.5rem;
+                gap: 0.5rem;
             }
         }
         
@@ -197,11 +217,11 @@
             <!-- Modelo del perro en 3D -->
             <a-entity id="dogModel" 
                       gltf-model="/Controllers/Models/dog_merlin_animals/scene.gltf" 
-                      scale="1.2 1.2 1.2" 
+                      scale="0.1 0.1 0.1" 
                       position="0 -0.5 -2" 
                       rotation="0 180 0"
                       material="transparent: false"
-                      animation="property: rotation; to: 0 540 0; loop: true; dur: 25000;">
+                      visible="false">
             </a-entity>
             
             <!-- Cámara AR -->
@@ -227,55 +247,415 @@
         <button class="control-btn" onclick="moveModel('down')" title="Bajar">↓</button>
         <button class="control-btn" onclick="moveModel('closer')" title="Acercar">+</button>
         <button class="control-btn" onclick="moveModel('further')" title="Alejar">-</button>
+        <button class="control-btn" onclick="rotateModel('left')" title="Rotar izquierda">↶</button>
+        <button class="control-btn" onclick="rotateModel('right')" title="Rotar derecha">↷</button>
     </div>
     
     <div class="instructions">
-        🎯 El perro aparece en realidad aumentada sobre tu cámara<br>
-        Usa los controles para mover el modelo
+        🎯 Toca el perro para seleccionarlo y arrastrarlo<br>
+        👆 Pellizca con dos dedos para cambiar el tamaño<br>
+        🔄 Usa los botones ↶ ↷ para rotarlo<br>
+        ⭕ El círculo verde indica que está seleccionado
     </div>
 
     <script>
         let dogEntity;
         let currentPosition = { x: 0, y: -0.5, z: -2 };
+        let currentScale = { x: 0.6, y: 0.6, z: 0.6 };
+        let currentRotation = { x: 0, y: 180, z: 0 };
+        
+        // Variables para gestos táctiles
+        let lastTouchDistance = 0;
+        let lastTouchCenter = { x: 0, y: 0 };
+        let isDragging = false;
+        let isPinching = false;
+        let isModelSelected = false;
+        let selectionIndicator = null;
+        
+        // Inicializar configuración responsiva
+        function initResponsiveModel() {
+            const responsivePos = getResponsivePosition();
+            const responsiveScale = getResponsiveScale();
+            
+            currentPosition = responsivePos;
+            currentScale = { 
+                x: responsiveScale.base, 
+                y: responsiveScale.base, 
+                z: responsiveScale.base 
+            };
+            
+            if (dogEntity) {
+                dogEntity.setAttribute('position', 
+                    `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
+                dogEntity.setAttribute('scale', 
+                    `${currentScale.x} ${currentScale.y} ${currentScale.z}`);
+                dogEntity.setAttribute('rotation', 
+                    `${currentRotation.x} ${currentRotation.y} ${currentRotation.z}`);
+            }
+        }
+        
+        // Obtener distancia entre dos puntos táctiles
+        function getTouchDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        // Obtener centro entre dos puntos táctiles
+        function getTouchCenter(touch1, touch2) {
+            return {
+                x: (touch1.clientX + touch2.clientX) / 2,
+                y: (touch1.clientY + touch2.clientY) / 2
+            };
+        }
+        
+        // Proyectar posición 3D del modelo a coordenadas de pantalla
+        function worldToScreen(worldPos) {
+            const scene = document.querySelector('a-scene');
+            const camera = scene.camera;
+            const canvas = scene.canvas;
+            
+            if (!camera || !canvas) return null;
+            
+            // Crear vector 3D de la posición del modelo
+            const vector = new THREE.Vector3(worldPos.x, worldPos.y, worldPos.z);
+            
+            // Proyectar a coordenadas de pantalla
+            vector.project(camera);
+            
+            // Convertir a coordenadas de píxeles
+            const x = (vector.x * 0.5 + 0.5) * canvas.clientWidth;
+            const y = (vector.y * -0.5 + 0.5) * canvas.clientHeight;
+            
+            return { x: x, y: y, z: vector.z };
+        }
+        
+        // Verificar si un toque está sobre el modelo
+        function isTouchOnModel(touchX, touchY) {
+            const modelScreen = worldToScreen(currentPosition);
+            if (!modelScreen) return false;
+            
+            // Radio de detección basado en la escala del modelo
+            const detectionRadius = 80 * Math.max(currentScale.x, currentScale.y, currentScale.z);
+            
+            const distance = Math.sqrt(
+                Math.pow(touchX - modelScreen.x, 2) + 
+                Math.pow(touchY - modelScreen.y, 2)
+            );
+            
+            return distance <= detectionRadius && modelScreen.z < 1; // z < 1 significa que está frente a la cámara
+        }
+        
+        // Crear indicador visual de selección
+        function createSelectionIndicator() {
+            if (selectionIndicator) {
+                document.body.removeChild(selectionIndicator);
+            }
+            
+            selectionIndicator = document.createElement('div');
+            selectionIndicator.className = 'selection-indicator';
+            selectionIndicator.style.width = '60px';
+            selectionIndicator.style.height = '60px';
+            document.body.appendChild(selectionIndicator);
+        }
+        
+        // Actualizar posición del indicador de selección
+        function updateSelectionIndicator() {
+            if (!selectionIndicator || !isModelSelected) return;
+            
+            const modelScreen = worldToScreen(currentPosition);
+            if (modelScreen) {
+                selectionIndicator.style.left = (modelScreen.x - 30) + 'px';
+                selectionIndicator.style.top = (modelScreen.y - 30) + 'px';
+                selectionIndicator.style.display = 'block';
+            } else {
+                selectionIndicator.style.display = 'none';
+            }
+        }
+        
+        // Ocultar indicador de selección
+        function hideSelectionIndicator() {
+            if (selectionIndicator) {
+                selectionIndicator.style.display = 'none';
+            }
+            isModelSelected = false;
+        }
+        
+        // Convertir coordenadas de pantalla a mundo 3D
+        function screenToWorld(screenX, screenY) {
+            const sceneEl = document.querySelector('a-scene');
+            const canvas = sceneEl.canvas;
+            
+            // Obtener dimensiones de pantalla
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // Factor de escala basado en el tamaño de pantalla
+            const baseWidth = 375; // iPhone base
+            const scaleFactor = Math.min(screenWidth / baseWidth, 1.5);
+            
+            // Normalizar coordenadas (-1 a 1)
+            const x = (screenX / canvas.clientWidth) * 2 - 1;
+            const y = -(screenY / canvas.clientHeight) * 2 + 1;
+            
+            // Proyectar al plano Z del modelo con escala responsiva
+            const sensitivity = 0.5 * scaleFactor;
+            const worldX = x * Math.abs(currentPosition.z) * sensitivity;
+            const worldY = y * Math.abs(currentPosition.z) * sensitivity;
+            
+            return { x: worldX, y: worldY };
+        }
+
+        
+        // Obtener escala base responsiva según el dispositivo
+        function getResponsiveScale() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const screenDiagonal = Math.sqrt(screenWidth * screenWidth + screenHeight * screenHeight);
+            
+            // Escalas base para diferentes tamaños de pantalla (reducidas)
+            if (screenDiagonal < 700) {
+                // Móviles pequeños
+                return { base: 0.18, min: 0.01, max: 0.7 };
+            } else if (screenDiagonal < 1000) {
+                // Móviles grandes / tablets pequeñas
+                return { base: 0.22, min: 0.01, max: 1.0 };
+            } else if (screenDiagonal < 1400) {
+                // Tablets
+                return { base: 0.25, min: 0.01, max: 1.2 };
+            } else {
+                // Desktop
+                return { base: 0.3, min: 0.1, max: 1.5 };
+            }
+        }
+        
+        // Ajustar posición inicial según pantalla
+        function getResponsivePosition() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            // Posición Z basada en el tamaño de pantalla
+            let z = -2;
+            if (screenWidth < 400) {
+                z = -1.5; // Más cerca en pantallas pequeñas
+            } else if (screenWidth > 1200) {
+                z = -3; // Más lejos en pantallas grandes
+            }
+            
+            // Posición Y ajustada para diferentes aspectos de pantalla
+            let y = -0.5;
+            const aspectRatio = screenWidth / screenHeight;
+            if (aspectRatio > 2) {
+                y = -0.2; // Pantallas muy anchas
+            } else if (aspectRatio < 0.6) {
+                y = -0.8; // Pantallas muy altas
+            }
+            
+            return { x: 0, y: y, z: z };
+        }
+        
+        // Manejar inicio de toque
+        function handleTouchStart(event) {
+            event.preventDefault();
+            const touches = event.touches;
+            
+            if (touches.length === 1) {
+                const touch = touches[0];
+                
+                // Verificar si el toque está sobre el modelo
+                if (isTouchOnModel(touch.clientX, touch.clientY)) {
+                    isModelSelected = true;
+                    createSelectionIndicator();
+                    updateSelectionIndicator();
+                    isDragging = true;
+                } else {
+                    // Toque fuera del modelo - deseleccionar
+                    hideSelectionIndicator();
+                    isDragging = false;
+                }
+                
+                lastTouchCenter = { x: touch.clientX, y: touch.clientY };
+            } else if (touches.length === 2) {
+                // Dos dedos - preparar pellizco
+                isPinching = true;
+                isDragging = false;
+                lastTouchDistance = getTouchDistance(touches[0], touches[1]);
+                lastTouchCenter = getTouchCenter(touches[0], touches[1]);
+            }
+        }
+        
+        // Manejar movimiento de toque
+        function handleTouchMove(event) {
+            event.preventDefault();
+            const touches = event.touches;
+            
+            if (!dogEntity) return;
+            
+            if (touches.length === 1 && isDragging && !isPinching && isModelSelected) {
+                // Arrastrar modelo solo si está seleccionado
+                const touch = touches[0];
+                const deltaX = touch.clientX - lastTouchCenter.x;
+                const deltaY = touch.clientY - lastTouchCenter.y;
+                
+                const worldDelta = screenToWorld(deltaX, deltaY);
+                
+                currentPosition.x += worldDelta.x * 0.01;
+                currentPosition.y -= worldDelta.y * 0.01;
+                
+                dogEntity.setAttribute('position', 
+                    `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
+                
+                // Actualizar indicador de selección
+                updateSelectionIndicator();
+                
+                lastTouchCenter = { x: touch.clientX, y: touch.clientY };
+                
+            } else if (touches.length === 2 && isPinching) {
+                // Pellizcar para escalar
+                const currentDistance = getTouchDistance(touches[0], touches[1]);
+                const distanceRatio = currentDistance / lastTouchDistance;
+                
+                // Aplicar escala
+                currentScale.x *= distanceRatio;
+                currentScale.y *= distanceRatio;
+                currentScale.z *= distanceRatio;
+                
+                // Limites de escala responsivos
+                const scaleInfo = getResponsiveScale();
+                
+                currentScale.x = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.x));
+                currentScale.y = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.y));
+                currentScale.z = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.z));
+                
+                dogEntity.setAttribute('scale', 
+                    `${currentScale.x} ${currentScale.y} ${currentScale.z}`);
+                
+                lastTouchDistance = currentDistance;
+                
+                // También mover el modelo con pellizco
+                const currentCenter = getTouchCenter(touches[0], touches[1]);
+                const centerDelta = {
+                    x: currentCenter.x - lastTouchCenter.x,
+                    y: currentCenter.y - lastTouchCenter.y
+                };
+                
+                const worldDelta = screenToWorld(centerDelta.x, centerDelta.y);
+                
+                currentPosition.x += worldDelta.x * 0.01;
+                currentPosition.y -= worldDelta.y * 0.01;
+                
+                dogEntity.setAttribute('position', 
+                    `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
+                
+                lastTouchCenter = currentCenter;
+            }
+        }
+        
+        // Manejar fin de toque
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            
+            if (event.touches.length === 0) {
+                isDragging = false;
+                isPinching = false;
+                // Mantener selección del modelo hasta el próximo toque
+            } else if (event.touches.length === 1 && isPinching) {
+                // Cambiar de pellizco a arrastre
+                isPinching = false;
+                if (isModelSelected) {
+                    isDragging = true;
+                    lastTouchCenter = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+                }
+            }
+        }
         
         // Inicializar cámara
         async function initCamera() {
             try {
+                console.log('Iniciando cámara...');
                 const video = document.getElementById('cameraVideo');
+                
+                // Verificar soporte de getUserMedia
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('getUserMedia no está soportado en este navegador');
+                }
                 
                 // Preferir cámara trasera en móviles para AR
                 const constraints = {
                     video: {
                         facingMode: { ideal: 'environment' }, // Cámara trasera
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
                     }
                 };
                 
+                console.log('Solicitando permisos de cámara...');
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                console.log('Cámara obtenida, configurando video...');
                 video.srcObject = stream;
                 
                 // Asegurar que el video se reproduzca
                 video.onloadedmetadata = () => {
-                    video.play();
-                    console.log('Cámara AR inicializada correctamente');
-                    
-                    // Ajustar orientación según el tipo de cámara
-                    const track = stream.getVideoTracks()[0];
-                    const settings = track.getSettings();
-                    if (settings.facingMode === 'user') {
-                        // Cámara frontal - efecto espejo
-                        video.style.transform = 'scaleX(-1)';
-                    } else {
-                        // Cámara trasera - normal
-                        video.style.transform = 'scaleX(1)';
-                    }
+                    console.log('Metadata del video cargada');
+                    video.play().then(() => {
+                        console.log('Video reproduciéndose correctamente');
+                        
+                        // Ajustar orientación según el tipo de cámara
+                        const track = stream.getVideoTracks()[0];
+                        if (track) {
+                            const settings = track.getSettings();
+                            console.log('Configuración de cámara:', settings);
+                            
+                            if (settings.facingMode === 'user') {
+                                // Cámara frontal - efecto espejo
+                                video.style.transform = 'scaleX(-1)';
+                            } else {
+                                // Cámara trasera - normal
+                                video.style.transform = 'scaleX(1)';
+                            }
+                        }
+                    }).catch(err => {
+                        console.error('Error al reproducir video:', err);
+                    });
+                };
+                
+                // Manejar errores de reproducción
+                video.onerror = (err) => {
+                    console.error('Error en el elemento video:', err);
                 };
                 
             } catch (err) {
                 console.error('Error accessing camera:', err);
                 document.querySelector('.instructions').innerHTML = 
-                    '❌ Error: No se pudo acceder a la cámara<br>Asegúrate de dar permisos y usar HTTPS';
+                    `❌ Error de cámara: ${err.message}<br>Asegúrate de dar permisos y usar HTTPS`;
+                
+                // Intentar con cámara frontal como fallback
+                if (err.name === 'OverconstrainedError' || err.name === 'NotFoundError') {
+                    console.log('Intentando con cámara frontal...');
+                    try {
+                        const fallbackConstraints = {
+                            video: {
+                                facingMode: 'user',
+                                width: { ideal: 640 },
+                                height: { ideal: 480 }
+                            }
+                        };
+                        
+                        const fallbackStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                        const video = document.getElementById('cameraVideo');
+                        video.srcObject = fallbackStream;
+                        video.style.transform = 'scaleX(-1)'; // Espejo para cámara frontal
+                        
+                        video.onloadedmetadata = () => {
+                            video.play();
+                            console.log('Cámara frontal funcionando como fallback');
+                        };
+                        
+                    } catch (fallbackErr) {
+                        console.error('Error con cámara frontal también:', fallbackErr);
+                    }
+                }
             }
         }
         
@@ -308,14 +688,117 @@
                 `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
         }
         
+        // Controlar rotación del modelo
+        function rotateModel(direction) {
+            if (!dogEntity) {
+                dogEntity = document.getElementById('dogModel');
+            }
+            
+            const rotationStep = 15; // Grados por click
+            
+            switch(direction) {
+                case 'left':
+                    currentRotation.y -= rotationStep;
+                    break;
+                case 'right':
+                    currentRotation.y += rotationStep;
+                    break;
+            }
+            
+            // Normalizar ángulo (mantener entre 0-360)
+            if (currentRotation.y < 0) currentRotation.y += 360;
+            if (currentRotation.y >= 360) currentRotation.y -= 360;
+            
+            dogEntity.setAttribute('rotation', 
+                `${currentRotation.x} ${currentRotation.y} ${currentRotation.z}`);
+        }
+        
         // Inicializar cuando la página carga
         window.addEventListener('load', () => {
-            initCamera();
+            console.log('Página cargada, inicializando...');
+            
+            // Pequeño delay para asegurar que todo esté listo
+            setTimeout(() => {
+                initCamera();
+            }, 500);
             
             // Obtener referencia al modelo cuando A-Frame esté listo
             document.querySelector('a-scene').addEventListener('loaded', () => {
                 dogEntity = document.getElementById('dogModel');
                 console.log('Modelo AR cargado');
+                
+                // Aplicar configuración responsiva inicial
+                initResponsiveModel();
+                
+                // Agregar eventos táctiles al contenedor AR
+                const arContainer = document.getElementById('arContainer');
+
+                // --- NUEVO: Colocar o mover el modelo con un clic/toque ---
+                function placeModelAtScreen(x, y) {
+                    // Si el modelo ya está visible y el toque es sobre el modelo, no mover
+                    if (dogEntity.getAttribute('visible') && isTouchOnModel(x, y)) return;
+                    // Proyectar a coordenadas del mundo 3D
+                    const world = screenToWorld(x, y);
+                    currentPosition.x = world.x;
+                    currentPosition.y = world.y;
+                    dogEntity.setAttribute('position', `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
+                    dogEntity.setAttribute('visible', 'true');
+                    // Opcional: actualizar instrucciones solo la primera vez
+                    if (!window._modelPlacedOnce) {
+                        document.querySelector('.instructions').innerHTML = `🎯 Toca el perro para seleccionarlo y arrastrarlo<br>👆 Pellizca con dos dedos para cambiar el tamaño<br>🔄 Usa los botones ↶ ↷ para rotarlo<br>⭕ El círculo verde indica que está seleccionado`;
+                        window._modelPlacedOnce = true;
+                    }
+                }
+
+                // Eventos táctiles para colocar/mover el modelo
+                arContainer.addEventListener('touchstart', function(e) {
+                    if (e.touches && e.touches.length === 1) {
+                        placeModelAtScreen(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: false });
+                arContainer.addEventListener('mousedown', function(e) {
+                    placeModelAtScreen(e.clientX, e.clientY);
+                }, { passive: false });
+
+                // Eventos táctiles para manipulación del modelo
+                arContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+                arContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+                arContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+                // Eventos de mouse para desktop (drag)
+                arContainer.addEventListener('mousedown', (e) => {
+                    const fakeTouch = { touches: [{ clientX: e.clientX, clientY: e.clientY }] };
+                    handleTouchStart(fakeTouch);
+                });
+
+                arContainer.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const fakeTouch = { touches: [{ clientX: e.clientX, clientY: e.clientY }] };
+                        handleTouchMove(fakeTouch);
+                    }
+                });
+
+                arContainer.addEventListener('mouseup', (e) => {
+                    const fakeTouch = { touches: [] };
+                    handleTouchEnd(fakeTouch);
+                });
+
+                // Evento de rueda para escalar en desktop
+                arContainer.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    if (!dogEntity) return;
+                    const scaleChange = e.deltaY > 0 ? 0.9 : 1.1;
+                    currentScale.x *= scaleChange;
+                    currentScale.y *= scaleChange;
+                    currentScale.z *= scaleChange;
+                    // Limites de escala responsivos
+                    const scaleInfo = getResponsiveScale();
+                    currentScale.x = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.x));
+                    currentScale.y = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.y));
+                    currentScale.z = Math.max(scaleInfo.min, Math.min(scaleInfo.max, currentScale.z));
+                    dogEntity.setAttribute('scale', 
+                        `${currentScale.x} ${currentScale.y} ${currentScale.z}`);
+                }, { passive: false });
             });
         });
         
@@ -326,7 +809,16 @@
                 if (video.srcObject) {
                     video.play();
                 }
+                // Reajustar modelo al cambiar orientación
+                initResponsiveModel();
             }, 500);
+        });
+        
+        // Manejar cambios de tamaño de ventana
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                initResponsiveModel();
+            }, 300);
         });
     </script>
 </body>
