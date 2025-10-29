@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AR Gato - Realidad Aumentada</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        body { background: #000; margin: 0; overflow: hidden; }
+        #cameraVideo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
+        #arContainer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 2; }
+        .ar-title { position: fixed; top: 1rem; left: 1rem; color: white; font-size: 1.2rem; font-weight: 600; z-index: 1000; background: rgba(0,0,0,0.5); padding: 0.5rem 1rem; border-radius: 8px; }
+        .back-btn { position: fixed; top: 1rem; right: 1rem; z-index: 1000; background: rgba(255,255,255,0.9); color: #333; border: none; border-radius: 8px; padding: 0.7rem 1.2rem; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .instructions { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); color: white; text-align: center; font-size: 1rem; background: rgba(0,0,0,0.7); padding: 1rem 1.5rem; border-radius: 12px; z-index: 1000; max-width: 90%; }
+    </style>
+</head>
+<body>
+    <video id="cameraVideo" autoplay muted playsinline></video>
+    <div id="arContainer">
+        <a-scene embedded vr-mode-ui="enabled: false;" background="color: transparent; transparent: true;" renderer="alpha: true; antialias: true;">
+            <a-assets></a-assets>
+            <a-entity id="catModel" gltf-model="/Controllers/Models/cat_merlin_animals/scene.gltf" scale="0.1 0.1 0.1" position="0 -0.5 -2" rotation="0 180 0" material="transparent: false" visible="false"></a-entity>
+            <a-camera position="0 1.6 0" look-controls="enabled: false" wasd-controls="enabled: false"></a-camera>
+            <a-light type="ambient" color="#ffffff" intensity="1.5"></a-light>
+            <a-light type="directional" position="2 4 2" color="#ffffff" intensity="2" cast-shadow="true"></a-light>
+            <a-light type="directional" position="-2 4 2" color="#ffffff" intensity="1.5"></a-light>
+            <a-light type="point" position="0 3 -1" color="#ffffff" intensity="1.2"></a-light>
+            <a-light type="point" position="1 2 -3" color="#ffeeaa" intensity="0.8"></a-light>
+        </a-scene>
+    </div>
+    <div class="ar-title">🐱 AR: Gato</div>
+    <button class="back-btn" onclick="window.location.href='/'">← Regresar</button>
+    <div class="instructions">👆 Toca la pantalla para colocar el modelo<br>Luego:<br>🎯 Toca el gato para seleccionarlo y arrastrarlo<br>👆 Pellizca con dos dedos para cambiar el tamaño<br>🔄 Usa los botones ↶ ↷ para rotarlo<br>⭕ El círculo verde indica que está seleccionado</div>
+    <script>
+        // Copia la lógica JS de dog_ar.html, cambiando dogModel por catModel
+    </script>
+</body>
+</html>

@@ -95,7 +95,12 @@
             <nav id="menu" class="menu">
                 <h2><i class="fas fa-paw"></i> Selecciona un Animal</h2>
                 <ul>
-                    <li><button onclick="showModel('dog')"><i class="fas fa-dog"></i> 🐶 Perro</button></li>
+                    <li style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start;">
+                        <button onclick="showModel('dog')"><i class="fas fa-dog"></i> 🐶 Perro</button>
+                        <button style="margin:0;width:auto;padding:0.4rem 1rem;font-size:0.95rem;background:linear-gradient(45deg,#f093fb,#f5576c);color:white;border:none;border-radius:8px;box-shadow:0 2px 8px rgba(245,87,108,0.10);font-weight:500;cursor:pointer;" onclick="window.open('/static/dog_ar.html','_blank')">
+                            <i class="fas fa-cube"></i> Ver en AR (cámara)
+                        </button>
+                    </li>
                     <li><button onclick="showModel('cat')"><i class="fas fa-cat"></i> 🐱 Gato</button></li>
                     <li><button onclick="showModel('bird')"><i class="fas fa-dove"></i> 🐦 Ave</button></li>
                     <li><button onclick="showModel('snake')"><i class="fas fa-snake"></i> 🐍 Serpiente</button></li>
@@ -108,9 +113,6 @@
                 </ul>
                 <button class="back-btn" onclick="goToIndex()">
                     <i class="fas fa-arrow-left"></i> Regresar a Inicio
-                </button>
-                <button style="margin-top:1.5rem;width:100%;padding:1rem 0;font-size:1.1rem;background:linear-gradient(45deg,#f093fb,#f5576c);color:white;border:none;border-radius:12px;box-shadow:0 4px 16px rgba(245,87,108,0.15);font-weight:600;cursor:pointer;" onclick="window.open('/static/dog_ar.html','_blank')">
-                    <i class="fas fa-cube"></i> Ver modelos AR (cámara)
                 </button>
             </nav>
         </header>
