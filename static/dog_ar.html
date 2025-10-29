@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AR Perro - Realidad Aumentada</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            margin: 0; 
+            background: #000; 
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Video de la cámara como fondo completo */
+        #cameraVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 1;
+            transform: scaleX(-1); /* Efecto espejo para cámara frontal */
+        }
+        
+        /* Contenedor para A-Frame superpuesto */
+        #arContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+        }
+        
+        /* A-Frame scene completamente transparente */
+        a-scene {
+            background: transparent !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        a-scene canvas {
+            background: transparent !important;
+        }
+        
+        .ar-title { 
+            position: fixed; 
+            top: 1rem; 
+            left: 1rem; 
+            color: white; 
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+            z-index: 1000;
+            background: rgba(0,0,0,0.5);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-btn { 
+            position: fixed; 
+            top: 1rem; 
+            right: 1rem; 
+            z-index: 1000; 
+            background: rgba(255,255,255,0.9); 
+            color: #333; 
+            border: none; 
+            border-radius: 8px; 
+            padding: 0.7rem 1.2rem; 
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        
+        .back-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .instructions {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            background: rgba(0,0,0,0.7);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            z-index: 1000;
+            max-width: 90%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        /* Control de posición del modelo */
+        .model-controls {
+            position: fixed;
+            bottom: 6rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 0.5rem;
+            pointer-events: auto;
+        }
+        
+        .control-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+        
+        /* Responsive breakpoints */
+        @media (max-width: 768px) {
+            .ar-title {
+                font-size: 1rem;
+                padding: 0.4rem 0.8rem;
+                top: 0.5rem;
+                left: 0.5rem;
+            }
+            
+            .back-btn {
+                padding: 0.6rem 1rem;
+                top: 0.5rem;
+                right: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .instructions {
+                bottom: 1rem;
+                padding: 0.8rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .model-controls {
+                bottom: 4rem;
+            }
+        }
+        
+        /* Soporte para notch en dispositivos móviles */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .ar-title {
+                top: calc(env(safe-area-inset-top) + 1rem);
+            }
+            
+            .back-btn {
+                top: calc(env(safe-area-inset-top) + 1rem);
+            }
+            
+            .instructions {
+                bottom: calc(env(safe-area-inset-bottom) + 1rem);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Video de la cámara como fondo -->
+    <video id="cameraVideo" autoplay muted playsinline></video>
+    
+    <!-- Contenedor AR superpuesto -->
+    <div id="arContainer">
+        <a-scene embedded vr-mode-ui="enabled: false;" background="color: transparent; transparent: true;" renderer="alpha: true; antialias: true;">
+            <a-assets>
+                <!-- Precargar el modelo -->
+            </a-assets>
+            
+            <!-- Modelo del perro en 3D -->
+            <a-entity id="dogModel" 
+                      gltf-model="/Controllers/Models/dog_merlin_animals/scene.gltf" 
+                      scale="1.2 1.2 1.2" 
+                      position="0 -0.5 -2" 
+                      rotation="0 180 0"
+                      material="transparent: false"
+                      animation="property: rotation; to: 0 540 0; loop: true; dur: 25000;">
+            </a-entity>
+            
+            <!-- Cámara AR -->
+            <a-camera position="0 1.6 0" look-controls="enabled: false" wasd-controls="enabled: false">
+            </a-camera>
+            
+            <!-- Sistema de luces mejorado -->
+            <a-light type="ambient" color="#ffffff" intensity="1.5"></a-light>
+            <a-light type="directional" position="2 4 2" color="#ffffff" intensity="2" cast-shadow="true"></a-light>
+            <a-light type="directional" position="-2 4 2" color="#ffffff" intensity="1.5"></a-light>
+            <a-light type="point" position="0 3 -1" color="#ffffff" intensity="1.2"></a-light>
+            <a-light type="point" position="1 2 -3" color="#ffeeaa" intensity="0.8"></a-light>
+        </a-scene>
+    </div>
+    
+    <!-- UI Elements -->
+    <div class="ar-title">🐶 AR: Perro</div>
+    <button class="back-btn" onclick="window.location.href='/'">← Regresar</button>
+    
+    <!-- Controles del modelo -->
+    <div class="model-controls">
+        <button class="control-btn" onclick="moveModel('up')" title="Subir">↑</button>
+        <button class="control-btn" onclick="moveModel('down')" title="Bajar">↓</button>
+        <button class="control-btn" onclick="moveModel('closer')" title="Acercar">+</button>
+        <button class="control-btn" onclick="moveModel('further')" title="Alejar">-</button>
+    </div>
+    
+    <div class="instructions">
+        🎯 El perro aparece en realidad aumentada sobre tu cámara<br>
+        Usa los controles para mover el modelo
+    </div>
+
+    <script>
+        let dogEntity;
+        let currentPosition = { x: 0, y: -0.5, z: -2 };
+        
+        // Inicializar cámara
+        async function initCamera() {
+            try {
+                const video = document.getElementById('cameraVideo');
+                
+                // Preferir cámara trasera en móviles para AR
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: 'environment' }, // Cámara trasera
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                
+                // Asegurar que el video se reproduzca
+                video.onloadedmetadata = () => {
+                    video.play();
+                    console.log('Cámara AR inicializada correctamente');
+                    
+                    // Ajustar orientación según el tipo de cámara
+                    const track = stream.getVideoTracks()[0];
+                    const settings = track.getSettings();
+                    if (settings.facingMode === 'user') {
+                        // Cámara frontal - efecto espejo
+                        video.style.transform = 'scaleX(-1)';
+                    } else {
+                        // Cámara trasera - normal
+                        video.style.transform = 'scaleX(1)';
+                    }
+                };
+                
+            } catch (err) {
+                console.error('Error accessing camera:', err);
+                document.querySelector('.instructions').innerHTML = 
+                    '❌ Error: No se pudo acceder a la cámara<br>Asegúrate de dar permisos y usar HTTPS';
+            }
+        }
+        
+        // Controlar movimiento del modelo
+        function moveModel(direction) {
+            if (!dogEntity) {
+                dogEntity = document.getElementById('dogModel');
+            }
+            
+            const step = 0.3;
+            
+            switch(direction) {
+                case 'up':
+                    currentPosition.y += step;
+                    break;
+                case 'down':
+                    currentPosition.y -= step;
+                    break;
+                case 'closer':
+                    currentPosition.z += step;
+                    if (currentPosition.z > 0) currentPosition.z = 0; // Límite cerca
+                    break;
+                case 'further':
+                    currentPosition.z -= step;
+                    if (currentPosition.z < -5) currentPosition.z = -5; // Límite lejos
+                    break;
+            }
+            
+            dogEntity.setAttribute('position', 
+                `${currentPosition.x} ${currentPosition.y} ${currentPosition.z}`);
+        }
+        
+        // Inicializar cuando la página carga
+        window.addEventListener('load', () => {
+            initCamera();
+            
+            // Obtener referencia al modelo cuando A-Frame esté listo
+            document.querySelector('a-scene').addEventListener('loaded', () => {
+                dogEntity = document.getElementById('dogModel');
+                console.log('Modelo AR cargado');
+            });
+        });
+        
+        // Manejar cambios de orientación
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                const video = document.getElementById('cameraVideo');
+                if (video.srcObject) {
+                    video.play();
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

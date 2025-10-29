@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 
 app = Flask(__name__)
 
@@ -10,6 +10,12 @@ def _get_config_bool(name, default=False):
     if val is None:
         return default
     return val.lower() in ('1', 'true', 'yes', 'on')
+
+
+# Ruta para servir modelos 3D
+@app.route('/Controllers/Models/<path:filename>')
+def serve_models(filename):
+    return send_from_directory('Controllers/Models', filename)
 
 
 # Importar controladores
